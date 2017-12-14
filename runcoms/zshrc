@@ -11,3 +11,33 @@ if [[ -s "${ZDOTDIR:-$HOME}/.zprezto/init.zsh" ]]; then
 fi
 
 # Customize to your needs...
+eval "$(rbenv init -)"
+alias findhere='mdfind -onlyin .'
+
+export AWS_PROFILE=eabmgt
+
+aws_sudo() {
+	creds=$(aws sts get-federation-token --name $1 --query 'Credentials.[SecretAccessKey, SessionToken, AccessKeyId]' --output text)
+	read -r AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN AWS_ACCESS_KEY_ID <<< "$creds"
+	export AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN AWS_ACCESS_KEY_ID
+}
+
+aws_role() {
+	creds=$(aws sts assume-role --role-name $1 --role-session-name cli-assume-role-`date +%s`)
+	read -r AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN AWS_ACCESS_KEY_ID <<< "$creds"
+	export AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN AWS_ACCESS_KEY_ID
+}
+
+aws_reset() {
+	unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
+	[[ $1 = "all" ]] && unset AWS_PROFILE || echo Preserving AWS_PROFILE
+}
+
+aws_who() {
+	echo "AWS_PROFILE: $AWS_PROFILE"
+	echo "AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID"
+	echo "AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY"
+	echo "AWS_SESSION_TOKEN: $AWS_SESSION_TOKEN"
+	aws sts get-caller-identity
+}
+
