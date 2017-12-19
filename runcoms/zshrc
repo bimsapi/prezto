@@ -23,7 +23,7 @@ aws_sudo() {
 }
 
 aws_role() {
-	creds=$(aws sts assume-role --role-name $1 --role-session-name cli-assume-role-`date +%s`)
+	creds=$(aws sts assume-role --role-arn $1 --role-session-name cli-assume-role-`date +%s` --query 'Credentials.[SecretAccessKey, SessionToken, AccessKeyId]' --output text)
 	read -r AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN AWS_ACCESS_KEY_ID <<< "$creds"
 	export AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN AWS_ACCESS_KEY_ID
 }
