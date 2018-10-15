@@ -14,7 +14,10 @@ fi
 eval "$(rbenv init -)"
 alias findhere='mdfind -onlyin .'
 
-export AWS_PROFILE=eabmgt
+export DS_DOMAIN='/Active Directory/ADVISORY/All Domains'
+
+export AWS_PROFILE=awseabmgmt
+AWS_ALL_PROFILES=('awseabmgmt' 'awseabmgmtdev' 'awseabdev' 'awseabprod' 'awseabrddev' 'awseabrdprod' 'gradesfirst' 'gradesfirstdev')
 
 aws_sudo() {
 	creds=$(aws sts get-federation-token --name $1 --query 'Credentials.[SecretAccessKey, SessionToken, AccessKeyId]' --output text)
@@ -33,6 +36,10 @@ aws_reset() {
 	[[ $1 = "all" ]] && unset AWS_PROFILE || echo Preserving AWS_PROFILE
 }
 
+aws_stacks() {
+	aws cloudformation describe-stacks --query 'Stacks[].[StackName]' --output text
+}
+
 aws_who() {
 	echo "AWS_PROFILE: $AWS_PROFILE"
 	echo "AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID"
@@ -41,3 +48,17 @@ aws_who() {
 	aws sts get-caller-identity
 }
 
+ad_groups() {
+	dscl '/Active Directory/ADVISORY/All Domains' \
+		read \
+		Users/${1} \
+		memberOf
+}
+
+ad_search() {
+	dscl ${DS_DOMAIN} \
+		search \
+		Users \
+		sn \
+	        ${1} 
+}
