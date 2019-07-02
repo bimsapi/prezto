@@ -11,13 +11,16 @@ if [[ -s "${ZDOTDIR:-$HOME}/.zprezto/init.zsh" ]]; then
 fi
 
 # Customize to your needs...
-eval "$(rbenv init -)"
+#eval "$(rbenv init -)"
 alias findhere='mdfind -onlyin .'
 
-export DS_DOMAIN='/Active Directory/ADVISORY/All Domains'
+export DS_DOMAIN='/Active Directory/MYEAB/All Domains'
 
 export AWS_PROFILE=awseabmgmt
-AWS_ALL_PROFILES=('awseabmgmt' 'awseabmgmtdev' 'awseabdev' 'awseabprod' 'awseabrddev' 'awseabrdprod' 'gradesfirst' 'gradesfirstdev')
+AWS_ALL_PROFILES=('awseabmgmt' 'awseabmgmtdev' 'awseabdev' 'awseabprod' 'awseabrddev' 'awseabrdprod' 'gradesfirst' 'gradesfirstdev'\
+	'awseabsgddev' 'awseabsgdprod' 'awseabscsdev' 'awseabscsprod' 'awseabscadev' 'awseabscaprod')
+
+export AWS_SDK_LOAD_CONFIG=true
 
 aws_sudo() {
 	creds=$(aws sts get-federation-token --name $1 --query 'Credentials.[SecretAccessKey, SessionToken, AccessKeyId]' --output text)
@@ -40,6 +43,25 @@ aws_stacks() {
 	aws cloudformation describe-stacks --query 'Stacks[].[StackName]' --output text
 }
 
+aws_facts() {
+	aws ssm get-parameters-by-path \
+	--path '/devops' \
+	--recursive \
+	--query 'Parameters[].[Name, Value]' \
+	--output table
+}
+
+aws_accounts() {
+	if (( $+1 )); then
+		fn="?contains(Id, to_string(\`$1\`))"
+	else
+		fn=""
+	fi;
+	aws --profile awseabmaster organizations list-accounts \
+	--query "Accounts[$fn].[Id, Email, Name]" \
+	--output table
+}
+
 aws_who() {
 	echo "AWS_PROFILE: $AWS_PROFILE"
 	echo "AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID"
@@ -49,7 +71,7 @@ aws_who() {
 }
 
 ad_groups() {
-	dscl '/Active Directory/ADVISORY/All Domains' \
+	dscl "${DS_DOMAIN}" \
 		read \
 		Users/${1} \
 		memberOf
@@ -61,4 +83,17 @@ ad_search() {
 		Users \
 		sn \
 	        ${1} 
+}
+
+ad_members() {
+	dscl "${DS_DOMAIN}" \
+		read \
+		"Groups/${1}" \
+		dsAttrTypeNative:member
+}
+
+read_env() {
+	set -a
+	source $1
+	set +a
 }
