@@ -62,12 +62,27 @@ aws_accounts() {
 	--output table
 }
 
+aws_vms() {
+	aws ec2 describe-instances \
+		--filters "Name=tag:Name,Values=${1}*" \
+		--query '*[].Instances[].[InstanceId, PrivateIpAddress, ImageId, Tags[?Key==`Name`].Value|[0]]' \
+		--output table
+}
+
 aws_who() {
 	echo "AWS_PROFILE: $AWS_PROFILE"
 	echo "AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID"
 	echo "AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY"
 	echo "AWS_SESSION_TOKEN: $AWS_SESSION_TOKEN"
 	aws sts get-caller-identity
+}
+
+aws_amis() {
+	aws ec2 describe-images \
+		--filters 'Name=owner-alias,Values=amazon' \
+		          'Name=name,Values=amzn2-ami-hvm-2.0*-x86*' \
+		--query 'sort_by(*[], &CreationDate)[].[ImageId, CreationDate, Name]' \
+		--output text
 }
 
 ad_groups() {
